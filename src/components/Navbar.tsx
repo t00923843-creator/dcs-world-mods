@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { SITE_NAME } from "@/lib/constants";
 import { NavbarClient } from "./NavbarClient";
 
 export async function Navbar() {
   const user = await getCurrentUser();
+  const unread = user
+    ? await db.notification.count({ where: { userId: user.id, read: false } })
+    : 0;
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-base/90 backdrop-blur">
@@ -27,6 +31,7 @@ export async function Navbar() {
                 }
               : null
           }
+          unread={unread}
         />
       </div>
     </header>

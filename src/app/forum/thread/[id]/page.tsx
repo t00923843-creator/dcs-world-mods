@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { RoleBadge } from "@/components/RoleBadge";
 import { ReportButton } from "@/components/ReportButton";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { formatDate, timeAgo } from "@/lib/utils";
 import { ReplyForm } from "./ReplyForm";
 import { LikeButton } from "./LikeButton";
@@ -33,6 +34,7 @@ export default async function ThreadPage({
               username: true,
               avatarUrl: true,
               role: true,
+              verified: true,
               createdAt: true,
               _count: { select: { posts: true } },
             },
@@ -92,9 +94,10 @@ export default async function ThreadPage({
               <div>
                 <Link
                   href={`/profile/${post.author.username}`}
-                  className="font-semibold text-radar hover:text-hud"
+                  className="flex items-center gap-1 font-semibold text-radar hover:text-hud"
                 >
                   {post.author.username}
+                  {post.author.verified && <VerifiedBadge size={14} />}
                 </Link>
                 <div className="mt-1">
                   <RoleBadge role={post.author.role} />

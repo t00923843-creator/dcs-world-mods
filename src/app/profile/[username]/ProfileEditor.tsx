@@ -5,10 +5,20 @@ import { useRouter } from "next/navigation";
 
 export function ProfileEditor({
   initialBio,
+  initialDiscord,
+  initialGithub,
+  initialYoutube,
   pendingUsername,
+  verified,
+  pendingVerification,
 }: {
   initialBio: string;
+  initialDiscord: string;
+  initialGithub: string;
+  initialYoutube: string;
   pendingUsername: string | null;
+  verified: boolean;
+  pendingVerification: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -20,6 +30,12 @@ export function ProfileEditor({
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameSent, setNameSent] = useState(false);
   const [newUsername, setNewUsername] = useState("");
+
+  // Verification request state
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [verifyMessage, setVerifyMessage] = useState("");
+  const [verifySent, setVerifySent] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,6 +73,26 @@ export function ProfileEditor({
     router.refresh();
   }
 
+  async function requestVerification(event: React.FormEvent) {
+    event.preventDefault();
+    setVerifyError(null);
+    setBusy(true);
+    const res = await fetch("/api/profile/verification-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: verifyMessage }),
+    });
+    setBusy(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setVerifyError(data.error ?? "Request failed");
+      return;
+    }
+    setVerifySent(true);
+    setVerifyOpen(false);
+    router.refresh();
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -70,6 +106,11 @@ export function ProfileEditor({
             ✎ Request Username Change
           </button>
         )}
+        {!verified && !verifyOpen && !pendingVerification && !verifySent && (
+          <button onClick={() => setVerifyOpen(true)} className="btn-secondary">
+            ✔ Request Verification
+          </button>
+        )}
       </div>
 
       {(pendingUsername || nameSent) && (
@@ -77,6 +118,46 @@ export function ProfileEditor({
           ⏳ Username change request pending Owner approval
           {pendingUsername ? ` (→ ${pendingUsername})` : ""}
         </p>
+      )}
+      {(pendingVerification || verifySent) && !verified && (
+        <p className="font-mono text-xs text-radar">
+          ⏳ Verification request pending Owner approval
+        </p>
+      )}
+
+      {verifyOpen && (
+        <form onSubmit={requestVerification} className="card space-y-3 p-6">
+          <div>
+            <label className="label" htmlFor="verifyMessage">
+              Why should you be verified?
+            </label>
+            <textarea
+              id="verifyMessage"
+              value={verifyMessage}
+              onChange={(e) => setVerifyMessage(e.target.value)}
+              className="input min-h-20"
+              maxLength={1000}
+              placeholder="Tell the Owner about your mods, experience and links to your work…"
+            />
+            <p className="mt-1 text-xs text-muted">
+              Verified Developers get a blue badge and appear as trusted mod
+              creators. Approval is at the Owner&apos;s discretion.
+            </p>
+          </div>
+          {verifyError && <p className="text-sm text-danger">{verifyError}</p>}
+          <div className="flex gap-2">
+            <button type="submit" className="btn-primary" disabled={busy}>
+              {busy ? "Sending…" : "Submit Request"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setVerifyOpen(false)}
+              className="btn-ghost"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
 
       {nameOpen && (
@@ -136,6 +217,41 @@ export function ProfileEditor({
               maxLength={500}
               placeholder="Tell the squadron about yourself…"
             />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="label" htmlFor="discordUrl">Discord URL</label>
+              <input
+                id="discordUrl"
+                name="discordUrl"
+                type="url"
+                defaultValue={initialDiscord}
+                className="input"
+                placeholder="https://discord.gg/…"
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="githubUrl">GitHub URL</label>
+              <input
+                id="githubUrl"
+                name="githubUrl"
+                type="url"
+                defaultValue={initialGithub}
+                className="input"
+                placeholder="https://github.com/…"
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="youtubeUrl">YouTube URL</label>
+              <input
+                id="youtubeUrl"
+                name="youtubeUrl"
+                type="url"
+                defaultValue={initialYoutube}
+                className="input"
+                placeholder="https://youtube.com/@…"
+              />
+            </div>
           </div>
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex gap-2">

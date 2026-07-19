@@ -17,7 +17,13 @@ type NavUser = {
   avatarUrl: string | null;
 } | null;
 
-export function NavbarClient({ user }: { user: NavUser }) {
+export function NavbarClient({
+  user,
+  unread = 0,
+}: {
+  user: NavUser;
+  unread?: number;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -58,6 +64,19 @@ export function NavbarClient({ user }: { user: NavUser }) {
 
   const auth = user ? (
     <div className="flex items-center gap-3">
+      <Link
+        href="/notifications"
+        onClick={() => setOpen(false)}
+        className="relative text-lg text-muted transition-colors hover:text-hud"
+        aria-label="Notifications"
+      >
+        🔔
+        {unread > 0 && (
+          <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-hud px-1 font-mono text-[10px] font-bold text-[#0a0e14]">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </Link>
       <Link
         href={`/profile/${user.username}`}
         onClick={() => setOpen(false)}

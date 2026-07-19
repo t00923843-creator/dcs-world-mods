@@ -5,8 +5,18 @@ import { requireUser } from "@/lib/auth";
 import { handleApiError } from "@/lib/api";
 import { saveImage } from "@/lib/uploads";
 
+const optionalUrl = z
+  .string()
+  .url("Invalid URL")
+  .max(300)
+  .optional()
+  .or(z.literal(""));
+
 const profileSchema = z.object({
   bio: z.string().max(500, "Bio must be under 500 characters").optional(),
+  discordUrl: optionalUrl,
+  githubUrl: optionalUrl,
+  youtubeUrl: optionalUrl,
 });
 
 export async function PATCH(request: NextRequest) {
@@ -14,8 +24,11 @@ export async function PATCH(request: NextRequest) {
     const user = await requireUser();
     const form = await request.formData();
 
-    const { bio } = profileSchema.parse({
+    const data = profileSchema.parse({
       bio: form.get("bio") ?? undefined,
+      discordUrl: form.get("discordUrl") ?? undefined,
+      githubUrl: form.get("githubUrl") ?? undefined,
+      youtubeUrl: form.get("youtubeUrl") ?? undefined,
     });
 
     let avatarUrl: string | undefined;
@@ -27,7 +40,16 @@ export async function PATCH(request: NextRequest) {
     await db.user.update({
       where: { id: user.id },
       data: {
-        ...(bio !== undefined ? { bio } : {}),
+        ...(data.bio !== undefined ? { bio: data.bio } : {}),
+        ...(data.discordUrl !== undefined
+          ? { discordUrl: data.discordUrl || null }
+          : {}),
+        ...(data.githubUrl !== undefined
+          ? { githubUrl: data.githubUrl || null }
+          : {}),
+        ...(data.youtubeUrl !== undefined
+          ? { youtubeUrl: data.youtubeUrl || null }
+          : {}),
         ...(avatarUrl ? { avatarUrl } : {}),
       },
     });

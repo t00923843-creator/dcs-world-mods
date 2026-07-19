@@ -16,6 +16,7 @@ import { RatingWidget } from "./RatingWidget";
 import { CommentForm } from "./CommentForm";
 import { ReportButton } from "@/components/ReportButton";
 import { categoryPlaceholder } from "@/components/ModCard";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +31,28 @@ export default async function ModPage({
   const mod = await db.mod.findUnique({
     where: { slug },
     include: {
-      author: { select: { id: true, username: true, avatarUrl: true, role: true } },
+      author: {
+        select: {
+          id: true,
+          username: true,
+          avatarUrl: true,
+          role: true,
+          verified: true,
+        },
+      },
       ratings: true,
       screenshots: { orderBy: { sortOrder: "asc" } },
       comments: {
         orderBy: { createdAt: "desc" },
         include: {
-          user: { select: { username: true, avatarUrl: true, role: true } },
+          user: {
+            select: {
+              username: true,
+              avatarUrl: true,
+              role: true,
+              verified: true,
+            },
+          },
         },
       },
     },
@@ -151,9 +167,10 @@ export default async function ModPage({
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/profile/${comment.user.username}`}
-                        className="text-sm font-semibold text-radar hover:text-hud"
+                        className="flex items-center gap-1 text-sm font-semibold text-radar hover:text-hud"
                       >
                         {comment.user.username}
+                        {comment.user.verified && <VerifiedBadge size={13} />}
                       </Link>
                       <RoleBadge role={comment.user.role} />
                       <span className="font-mono text-xs text-muted">
@@ -216,8 +233,9 @@ export default async function ModPage({
                 avatarUrl={mod.author.avatarUrl}
               />
               <div>
-                <div className="font-semibold text-ink hover:text-hud">
+                <div className="flex items-center gap-1.5 font-semibold text-ink hover:text-hud">
                   {mod.author.username}
+                  {mod.author.verified && <VerifiedBadge size={15} />}
                 </div>
                 <RoleBadge role={mod.author.role} />
               </div>

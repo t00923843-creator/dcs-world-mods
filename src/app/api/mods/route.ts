@@ -6,6 +6,7 @@ import { handleApiError } from "@/lib/api";
 import { saveImage, saveModFile } from "@/lib/uploads";
 import { MOD_CATEGORIES } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
+import { notifyFollowersOfNewMod } from "@/lib/notifications";
 
 const modSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(100),
@@ -86,6 +87,11 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Owner uploads go live immediately — notify their followers right away.
+    if (mod.status === "APPROVED") {
+      await notifyFollowersOfNewMod(user.id, mod.title, mod.slug);
+    }
 
     return NextResponse.json({ ok: true, slug: mod.slug, status: mod.status });
   } catch (error) {

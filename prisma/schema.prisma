@@ -25,8 +25,12 @@ model User {
   passwordHash String? // null for Google-only accounts
   googleId     String?  @unique
   role         String   @default("USER") // USER | DEVELOPER | ADMIN
+  verified     Boolean  @default(false) // blue "Verified Developer" badge
   avatarUrl    String?
   bio          String?
+  discordUrl   String?
+  githubUrl    String?
+  youtubeUrl   String?
   createdAt    DateTime @default(now())
 
   mods             Mod[]
@@ -38,8 +42,51 @@ model User {
   reports          Report[]                @relation("reporter")
   news             NewsItem[]
   guides           Guide[]
-  usernameRequests UsernameChangeRequest[]
-  passwordResets   PasswordResetCode[]
+  usernameRequests     UsernameChangeRequest[]
+  passwordResets       PasswordResetCode[]
+  verificationRequests VerificationRequest[]
+  following            Follow[]                @relation("follower")
+  followers            Follow[]                @relation("following")
+  notifications        Notification[]
+}
+
+model VerificationRequest {
+  id        String   @id @default(cuid())
+  message   String? // why they should be verified
+  status    String   @default("OPEN") // OPEN | APPROVED | REJECTED
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
 }
 
 model PasswordResetCode {

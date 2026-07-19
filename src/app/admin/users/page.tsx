@@ -5,13 +5,15 @@ import { Avatar } from "@/components/Avatar";
 import { formatDate } from "@/lib/utils";
 import { UserActions } from "./UserActions";
 import { UsernameRequestActions } from "./UsernameRequestActions";
+import { VerificationRequestActions } from "./VerificationRequestActions";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 export const metadata: Metadata = { title: "Manage Users" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
   const admin = await getCurrentUser();
-  const [users, usernameRequests] = await Promise.all([
+  const [users, usernameRequests, verificationRequests] = await Promise.all([
     db.user.findMany({
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { mods: true, posts: true } } },
@@ -21,10 +23,51 @@ export default async function AdminUsersPage() {
       orderBy: { createdAt: "asc" },
       include: { user: { select: { username: true } } },
     }),
+    db.verificationRequest.findMany({
+      where: { status: "OPEN" },
+      orderBy: { createdAt: "asc" },
+      include: {
+        user: {
+          select: {
+            username: true,
+            createdAt: true,
+            _count: { select: { mods: true } },
+          },
+        },
+      },
+    }),
   ]);
 
   return (
     <div className="space-y-6">
+      {verificationRequests.length > 0 && (
+        <section>
+          <h2 className="section-title mb-4">
+            Verification Requests ({verificationRequests.length})
+          </h2>
+          <div className="card divide-y divide-line">
+            {verificationRequests.map((req) => (
+              <div
+                key={req.id}
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <span className="font-semibold text-radar">
+                    {req.user.username}
+                  </span>{" "}
+                  <span className="font-mono text-xs text-muted">
+                    · {req.user._count.mods} mods
+                  </span>
+                  {req.message && (
+                    <p className="mt-1 text-sm text-muted">{req.message}</p>
+                  )}
+                </div>
+                <VerificationRequestActions requestId={req.id} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {usernameRequests.length > 0 && (
         <section>
           <h2 className="section-title mb-4">
@@ -68,6 +111,7 @@ export default async function AdminUsersPage() {
                 <div className="flex items-center gap-2">
                   <Avatar username={user.username} avatarUrl={user.avatarUrl} size="sm" />
                   <span className="font-semibold text-ink">{user.username}</span>
+                  {user.verified && <VerifiedBadge size={14} />}
                 </div>
               </td>
               <td className="p-4 text-muted">{user.email}</td>
