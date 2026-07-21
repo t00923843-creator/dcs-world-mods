@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.APP_URL ?? "https://dcs-world-mods.vercel.app"
+  ),
   title: {
     default: `${SITE_NAME} — Community Hub`,
     template: `%s | ${SITE_NAME}`,
